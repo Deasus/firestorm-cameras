@@ -1,0 +1,39 @@
+name: Update Wildfire Cameras (AlertWest)
+
+# Camera LOCATIONS are near-static (the live IMAGE changes constantly, but the
+# frontend hot-links that directly per-popup). So this only needs to refresh the
+# catalog hourly to pick up added/removed/renamed cameras. No aggressive
+# self-redispatch loop needed (unlike the fire-detection feeds).
+on:
+  schedule:
+    - cron: '17 * * * *'      # hourly at :17 (offset to avoid the top-of-hour GHA stampede)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: update-cameras
+      cancel-in-progress: false
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Fetch camera catalog
+        run: python fetch_cameras.py     # stdlib only, no deps
+      - name: Commit if changed
+        run: |
+          git config user.name  'firestorm-bot'
+          git config user.email 'firestorm-bot@users.noreply.github.com'
+          git add data/cameras.json
+          if git diff --cached --quiet; then
+            echo 'No change'
+          else
+            git commit -m "cameras update $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            git push
+          fi
