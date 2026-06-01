@@ -56,7 +56,17 @@ def main() -> int:
         if lat is None or lng is None:
             continue
         img = (c.get("image") or {}).get("url") or ""
-        cams.append({
+        # v2_190 — keep the PTZ pan (compass bearing the camera is aimed) so the
+        # frontend can orient the camera icon toward the direction it's looking.
+        # position.pan is a string like "200.06"; tolerate missing/None.
+        pan = None
+        pos = c.get("position") or {}
+        if pos.get("pan") not in (None, ""):
+            try:
+                pan = round(float(pos["pan"]) % 360, 1)
+            except (TypeError, ValueError):
+                pan = None
+        rec = {
             "name": c.get("name") or site.get("id") or "camera",
             "lat": round(float(lat), 5),
             "lng": round(float(lng), 5),
@@ -64,7 +74,10 @@ def main() -> int:
             "county": site.get("county") or "",
             "img": img,            # live-frame URL — hot-linked by the frontend, NOT re-hosted
             "src": c.get("source") or "AlertWest",
-        })
+        }
+        if pan is not None:
+            rec["pan"] = pan   # compass degrees the PTZ camera is currently pointing
+        cams.append(rec)
 
     payload = {
         "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
