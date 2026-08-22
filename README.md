@@ -1,6 +1,6 @@
 # firestorm-cameras
 
-National-reach wildfire **camera catalog** for [FIRESTORM](https://github.com/Deasus/Firestorm),
+National-reach wildfire **camera catalog** for [FIRESTORM](https://github.com/Deasus/firestorm-platform),
 snapshotted from the **AlertWest** public API so the single-file frontend can read it CORS-cleanly.
 
 ## Why a bridge (not a direct browser fetch)
